@@ -1,11 +1,17 @@
-// var express = require('express');
-// var router = express.Router();
+var express = require('express');
+var router = express.Router();
 
-// router.get("/movies/search/", (req, res, next) => {
-//     req.db
-//         .from("movies.basics")
-//         .select("*")
-//         .then(rows => {
-//             res.json({Error: false, Message: "Success", data: rows});
-//         })
-// });
+router.get("/search", (req, res, next) => {
+    // get the search params
+    const { title, year, page } = req.query;
+    req.db
+        .from("movies.basics")
+        .select("primaryTitle", "year", "tconst", "imdbRating", "rottentomatoesRating", "metacriticRating", "rated")
+        .whereILike('primaryTitle', "%"+title+"%")
+        .whereILike('year', "%"+year+"%")
+        .then(rows => {
+            res.json({ Error: false, Message: "Success", data: rows });
+        })
+});
+
+module.exports = router;
