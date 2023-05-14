@@ -9,6 +9,26 @@ var usersRouter = require('./routes/users');
 
 var app = express();
 
+// knex setup
+const options = require('./knexfile.js');
+const knex = require('knex')(options);
+
+app.use((req, res, next) => {
+  req.db = knex;
+  next();
+})
+
+app.get("/knex", (req, res, next) => {
+  req.db
+    .raw("SELECT VERSION()")
+    .then(version => console.log(version[0][0]))
+    .catch(err => {
+      console.log(err);
+      throw err;
+    });
+  res.send("Version Logged Successfully");
+})
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
