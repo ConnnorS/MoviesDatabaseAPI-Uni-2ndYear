@@ -3,7 +3,11 @@ var router = express.Router();
 
 router.get("/search", (req, res, next) => {
     // get the search params
-    const { title, year, page } = req.query;
+    let { title, year, page } = req.query;
+    title == undefined ? title = "" : null;
+    year == undefined ? year = "": null;
+
+    console.log(`Searching for ${title} in year ${year}`);
     req.db
         .from("movies.basics")
         .select("primaryTitle", "year", "tconst", "imdbRating", "rottentomatoesRating", "metacriticRating", "rated")
@@ -12,6 +16,10 @@ router.get("/search", (req, res, next) => {
         .then(rows => {
             res.json({ Error: false, Message: "Success", data: rows });
         })
+});
+
+router.get("/data/:imdbID", (req, res, next) => {
+    
 });
 
 module.exports = router;
