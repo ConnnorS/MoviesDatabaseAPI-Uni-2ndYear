@@ -6,7 +6,7 @@ var logger = require('morgan');
 
 // route definitions
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var peopleRouter = require('./routes/people');
 var moviesRouter = require("./routes/movies");
 
 var app = express();
@@ -43,7 +43,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // routes
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/people', peopleRouter);
 app.use('/movies', moviesRouter);
 
 
