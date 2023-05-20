@@ -22,12 +22,14 @@ router.get("/search", async (req, res, next) => {
             .whereILike('primaryTitle', "%" + title + "%")
             .whereILike('year', "%" + year + "%");
 
+        // set up the pagination data
         const resultLength = rows.length;
         const perPage = 100;
         const startIndex = (page - 1) * perPage;
         const endIndex = startIndex + perPage;
         const slicedRows = rows.slice(startIndex, endIndex);
 
+        // add the pagination data
         const pagination = {
             total: resultLength,
             lastPage: Math.ceil(resultLength / perPage),
@@ -39,13 +41,16 @@ router.get("/search", async (req, res, next) => {
             to: Math.min(endIndex, resultLength),
         };
 
+        // return the result
         res.json({
             Error: false,
             Message: "Success",
             data: slicedRows,
             pagination: pagination,
         });
-    } catch (error) {
+    }
+    // error handling
+    catch (error) {
         console.log(err);
         res.status(500).json({ error: true, message: "Error with database" });
     }
@@ -53,10 +58,12 @@ router.get("/search", async (req, res, next) => {
 
 // movies/data/{imdbID}
 router.get("/data/:imdbID", async (req, res, next) => {
+    // get the search paramters
     const imdbID = req.params.imdbID;
     let result = {};
 
     try {
+        // get the movie data
         const movieData = await req.db
             .from("movies.basics")
             .select(
@@ -70,23 +77,29 @@ router.get("/data/:imdbID", async (req, res, next) => {
                 "plot"
             )
             .where("tconst", "=", imdbID)
-            .first();
-
+        // assign the result to result
         result = movieData;
-
+        
+        // get the actor data
         const actorData = await req.db
             .from("movies.principals")
             .select("nconst AS id", "category", "name", "characters")
             .where("tconst", "=", imdbID);
-
+        
+        // fix up their characters array
         actorData.forEach(element => {
             const temp = element.characters.replace(/[\[\]"]/g, '').split(',');
             element.characters = temp;
         });
 
+        // assign the actor data to result.principals
         result.principals = actorData;
+
+        // return the result
         res.json({ Error: false, Message: "Success", data: result });
-    } catch (err) {
+    }
+    // error handling
+    catch (err) {
         console.log(err);
         res.status(500).json({ error: true, message: "Error with database" });
     }
