@@ -3,19 +3,39 @@ var router = express.Router();
 
 router.get("/search", (req, res, next) => {
     // get the search params
-    let { title, year, page } = req.query;
-    title == undefined ? title = "" : null;
-    year == undefined ? year = "" : null;
+    let { title = "", year = "", page } = req.query;
+    page == undefined ? page = 1 : null;
 
-    console.log(`Searching for ${title} in year ${year}`);
+    // query the database
     req.db
         .from("movies.basics")
-        .select("primaryTitle", "year", "tconst", "imdbRating", "rottentomatoesRating", "metacriticRating", "rated")
+        .select("primaryTitle AS title", "year", "tconst AS imdbID ", "imdbRating",
+            "rottentomatoesRating AS rottenTomatoesRating", "metacriticRating",
+            "rated AS classification")
         .whereILike('primaryTitle', "%" + title + "%")
         .whereILike('year', "%" + year + "%")
         .then(rows => {
-            res.json({ Error: false, Message: "Success", data: rows });
-        })
+            let resultLength = Object.keys(rows).length;
+            console.log(page);
+            console.log(page * 100);
+            console.log(page * 100 + 99);
+            let slicedRows = [];
+            for (let i = (page * 100) - 100; i <= (page * 100 - 1); i++) {
+                slicedRows.push(rows[i])
+            }
+            res.json({
+                Error: false, Message: "Success", data: slicedRows, pagination: {
+                    total: resultLength,
+                    lastPage: Math.ceil(resultLength / 100),
+                    prevPage: parseInt(page) - 1,
+                    nextPage: parseInt(page) + 1,
+                    perPage: 100,
+                    currentPage: parseInt(page),
+                    from: (page * 100) - 100,
+                    to: page * 100
+                }
+            });
+        });
 });
 
 router.get("/data/:imdbID", (req, res, next) => {
