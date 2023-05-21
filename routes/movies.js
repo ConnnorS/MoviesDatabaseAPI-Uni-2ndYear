@@ -77,8 +77,12 @@ router.get("/data/:imdbID", async (req, res, next) => {
                 "plot"
             )
             .where("tconst", "=", imdbID)
+
         // assign the result to result
-        result = movieData;
+        result = movieData[0];
+        // return the genres as an array
+        result.genres = result.genres.split(',');
+
         
         // get the actor data
         const actorData = await req.db
