@@ -42,9 +42,16 @@ function isValidDate(dateString) {
             return false; // February 29 on a non-leap year
         }
     }
+    
+    // Check if the date is in the future
+    const currentDate = new Date();
+    if (date > currentDate) {
+        return false; // Date is in the future
+    }
 
     return true; // Valid date
 }
+
 
 
 
@@ -107,10 +114,10 @@ router.put('/:email/profile', async (req, res, next) => {
         return res.status(400).json({ error: true, message: "Request body incomplete: firstName, lastName, dob, and address are required" });
     }
     if (typeof firstName !== "string" || typeof lastName !== "string" || typeof dob !== "string" || typeof address !== "string") {
-        return res.status(400).json({ error: true, message: "Request body invalid: firstName, lastName, dob, and address must be strings" });
+        return res.status(400).json({ error: true, message: "Request body invalid: firstName, lastName and address must be strings only." });
     }
     if (!isValidDate(dob)) {
-        return res.status(400).json({ error: true, message: "Invalid input: dob must be a valid date in the format YYYY-MM-DD" });
+        return res.status(400).json({ error: true, message: "Invalid input: dob must be a real date in format YYYY-MM-DD." });
     }
 
     // check if the user exists
