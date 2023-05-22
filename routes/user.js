@@ -7,6 +7,11 @@ const bcrypt = require('bcrypt');
 // JSON Web Tokens
 const jwt = require('jsonwebtoken');
 
+// user/refresh
+router.post('/refresh', async (req, res, next) => {
+
+});
+
 // user/login
 router.post('/login', async (req, res, next) => {
     const { email, password } = req.body;
