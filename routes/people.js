@@ -1,8 +1,10 @@
 var express = require('express');
 var router = express.Router();
 
+const authorisation = require("../middleware/authorisation");
+
 // people/{id}
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", authorisation, async (req, res, next) => {
     // get the search params
     const id = req.params.id;
 
