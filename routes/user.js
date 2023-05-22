@@ -7,6 +7,22 @@ const bcrypt = require('bcrypt');
 // JSON Web Tokens
 const jwt = require('jsonwebtoken');
 
+
+// GET user/{email}/profile
+router.get('/:email/profile', (req, res, next) => {
+
+});
+
+// PUT user/{email}/profile
+router.put('/:email/profile', (req, res, next) => {
+    const email = req.params.email;
+
+    // check if there is an "authorized" header
+    if (!("authorization" in req.headers) || !req.headers.authorization.match(/^Bearer /)) {
+        return res.status(401).json({ error: true, message: "Authorisation header ('Bearer Token') not found." });
+    }
+});
+
 // user/refresh
 router.post('/refresh', (req, res, next) => {
     const userRefreshToken = req.body.refreshToken;
