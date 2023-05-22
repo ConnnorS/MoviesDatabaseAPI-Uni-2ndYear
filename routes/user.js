@@ -4,6 +4,17 @@ var router = express.Router();
 // encryption
 const bcrypt = require('bcrypt');
 
+// JSON Web Tokens
+const jwt = require('jsonwebtoken');
+
+// user/login
+router.get('/login', (req, res, next) => {
+    
+})
+
+
+
+
 // user/register
 router.post('/register', async (req, res, next) => {
     // get the email and password from the request
@@ -19,7 +30,7 @@ router.post('/register', async (req, res, next) => {
             status = 400;
             resJSON = {
                 error: true,
-                message: "Request body incomplete - email and password needed."
+                message: "Request body incomplete, email and password needed."
             };
 
             throw new Error;
