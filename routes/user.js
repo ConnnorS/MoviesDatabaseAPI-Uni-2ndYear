@@ -8,8 +8,43 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 // user/refresh
-router.post('/refresh', async (req, res, next) => {
+router.post('/refresh', (req, res, next) => {
+    const userRefreshToken = req.body.refreshToken;
 
+    // check if the request has everything
+    if (!userRefreshToken) {
+        return res.status(400).json({
+            error: true,
+            message: "Request body incomplete, refresh token required."
+        });
+    }
+
+    // verify the refresh token
+    try {
+        const verified = jwt.verify(userRefreshToken, process.env.JWT_SECRET)
+        // if verified, give a new one
+        // if the passwords are correct, return the bearer token
+        const email = verified.email;
+        const expiresIn = 600;
+        const exp = Math.floor(Date.now() / 1000) + expiresIn;
+        const token = jwt.sign({ email, exp }, process.env.JWT_SECRET);
+
+        const refreshExpiresIn = 86400;
+        const refreshExp = Math.floor(Date.now() / 1000) + refreshExpiresIn;
+        const refreshToken = jwt.sign({ email, refreshExp }, process.env.JWT_SECRET);
+
+        res.status(200).json({
+            bearerToken: { token, token_type: "Bearer", expiresIn },
+            refreshToken: { token: refreshToken, token_type: "Refresh", expiresIn: refreshExpiresIn }
+        });
+    }
+    catch (e) {
+        e.name == "TokenExpiredError" ?
+            res.status(401).json({ error: true, message: "JWT token has expired." })
+            :
+            res.status(401).json({ error: true, message: "Invalid JWT token." });
+        return;
+    }
 });
 
 // user/login
@@ -55,11 +90,11 @@ router.post('/login', async (req, res, next) => {
 
     const refreshExpiresIn = 86400;
     const refreshExp = Math.floor(Date.now() / 1000) + refreshExpiresIn;
-    const refreshToken = jwt.sign({email, refreshExp}, process.env.JWT_SECRET);
+    const refreshToken = jwt.sign({ email, refreshExp }, process.env.JWT_SECRET);
 
     res.status(200).json({
         bearerToken: { token, token_type: "Bearer", expiresIn },
-        refreshToken: {token: refreshToken, token_type: "Refresh", expiresIn: refreshExpiresIn}
+        refreshToken: { token: refreshToken, token_type: "Refresh", expiresIn: refreshExpiresIn }
     });
 });
 
