@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
+// people/{id}
 router.get("/:id", async (req, res, next) => {
     // get the search params
     const id = req.params.id;
