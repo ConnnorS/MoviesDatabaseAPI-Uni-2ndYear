@@ -7,8 +7,44 @@ const bcrypt = require('bcrypt');
 // JSON Web Tokens
 const jwt = require('jsonwebtoken');
 
-// authorisation
-const authorisation = require("../middleware/authorisation");
+
+// function to verify the date
+function isValidDate(dateString) {
+    // Regular expression pattern for YYYY-MM-DD format
+    const regex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+    if (!regex.test(dateString)) {
+        return false; // Not in the correct format
+    }
+
+    // Split the date into its components
+    const [year, month, day] = dateString.split('-');
+
+    // Convert the components into numbers
+    const numericYear = parseInt(year, 10);
+    const numericMonth = parseInt(month, 10);
+    const numericDay = parseInt(day, 10);
+
+    // Check if the date is valid
+    const date = new Date(numericYear, numericMonth - 1, numericDay);
+    if (
+        date.getFullYear() !== numericYear ||
+        date.getMonth() + 1 !== numericMonth ||
+        date.getDate() !== numericDay
+    ) {
+        return false; // Invalid date
+    }
+
+    // Check if February 29 is on a leap year
+    if (numericMonth === 2 && numericDay === 29) {
+        const isLeapYear = (numericYear % 4 === 0 && numericYear % 100 !== 0) || numericYear % 400 === 0;
+        if (!isLeapYear) {
+            return false; // February 29 on a non-leap year
+        }
+    }
+
+    return true; // Valid date
+}
 
 
 
@@ -45,13 +81,14 @@ router.get('/:email/profile', async (req, res, next) => {
                 res.status(200).json({ error: false, message: "Success", data: userData[0] });
             }
             else {
-                res.status(401).json({ error: true, message: "Provided JWT token is for the wrong user" })
+                res.status(403).json({ error: true, message: "Forbidden" })
             }
         }
         catch (e) {
             if (e.name === "TokenExpiredError") {
                 res.status(401).json({ error: true, message: "JWT Token has Expired" });
-            } else {
+            }
+            else {
                 res.status(401).json({ error: true, message: "Invalid JWT token" });
             }
             return;
@@ -62,15 +99,66 @@ router.get('/:email/profile', async (req, res, next) => {
     }
 });
 
-// PUT user/{email}/profile
-router.put('/:email/profile', (req, res, next) => {
-    const email = req.params.email;
+router.put('/:email/profile', async (req, res, next) => {
+    const { firstName, lastName, dob, address } = req.body;
 
-    // check if there is an "authorized" header
-    if (!("authorization" in req.headers) || !req.headers.authorization.match(/^Bearer /)) {
-        return res.status(401).json({ error: true, message: "Authorisation header ('Bearer Token') not found." });
+    // verify the fields
+    if (!firstName || !lastName || !dob || !address) {
+        return res.status(400).json({ error: true, message: "Request body incomplete: firstName, lastName, dob, and address are required" });
+    }
+    if (typeof firstName !== "string" || typeof lastName !== "string" || typeof dob !== "string" || typeof address !== "string") {
+        return res.status(400).json({ error: true, message: "Request body invalid: firstName, lastName, dob, and address must be strings" });
+    }
+    if (!isValidDate(dob)) {
+        return res.status(400).json({ error: true, message: "Invalid input: dob must be a valid date in the format YYYY-MM-DD" });
+    }
+
+    // check if the user exists
+    const userData = await req.db('movies.users')
+        .select('email')
+        .where('email', req.params.email)
+        .limit(1);
+    if (userData.length === 0) {
+        return res.status(404).json({ error: true, message: "User not found" });
+    }
+
+    // check for authorisation header
+    if (!req.headers.authorization) {
+        return res.status(401).json({ error: true, message: "Authorization header ('Bearer token') not found" });
+    }
+    else if (!req.headers.authorization.startsWith('Bearer ')) {
+        return res.status(401).json({ error: true, message: "Authorization header is malformed" });
+    }
+
+    // verify the authorisation
+    const token = req.headers.authorization.replace('Bearer ', '');
+    try {
+        const verified = jwt.verify(token, process.env.JWT_SECRET);
+        // check if the token's email and claimed email match
+        if (verified.email === req.params.email) {
+            const data = await req.db("movies.users")
+                .where("email", "=", req.params.email)
+                .update({ firstName: firstName, lastName: lastName, dob: dob, address: address });
+
+            res.status(200).json({
+                error: false,
+                message: "success",
+                data: { email: userData[0].email, firstName, lastName, dob, address }
+            });
+        }
+        // if the token's email doesn't match the claimed email
+        else {
+            res.status(403).json({ error: true, message: "Forbidden" });
+        }
+    } catch (error) {
+        if (error.name === "TokenExpiredError") {
+            res.status(401).json({ error: true, message: "JWT Token has expired" });
+        } else {
+            res.status(401).json({ error: true, message: "Invalid JWT token" });
+        }
     }
 });
+
 
 // user/refresh
 router.post('/refresh', (req, res, next) => {
