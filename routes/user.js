@@ -7,10 +7,59 @@ const bcrypt = require('bcrypt');
 // JSON Web Tokens
 const jwt = require('jsonwebtoken');
 
+// authorisation
+const authorisation = require("../middleware/authorisation");
+
+
 
 // GET user/{email}/profile
-router.get('/:email/profile', (req, res, next) => {
+router.get('/:email/profile', async (req, res, next) => {
+    // get the user data
+    const userData = await req.db
+        .from("movies.users")
+        .select("email", "firstName", "lastName", "dob", "address")
+        .where("email", "=", req.params.email);
 
+    // check if the user exists
+    if (userData.length === 0) {
+        return res.status(404).json({
+            error: true,
+            message: "User not found."
+        });
+    }
+
+    // if no authorisation, only provide basic info
+    if (!("authorization" in req.headers)) {
+        const info = { email: userData[0].email, firstName: userData[0].firstName, lastName: userData[0].lastName };
+        return res.status(200).json({ error: false, message: "Success", data: info });
+    }
+
+    // if the user has provided some authorisation
+    if (req.headers.authorization.match(/^Bearer /)) {
+        const token = req.headers.authorization.replace(/^Bearer /, "");
+        // check if the authorisation is valid
+        try {
+            const verified = jwt.verify(token, process.env.JWT_SECRET);
+            // check if the token's email matches the claimed email
+            if (verified.email === req.params.email) {
+                res.status(200).json({ error: false, message: "Success", data: userData[0] });
+            }
+            else {
+                res.status(401).json({ error: true, message: "Provided JWT token is for the wrong user" })
+            }
+        }
+        catch (e) {
+            if (e.name === "TokenExpiredError") {
+                res.status(401).json({ error: true, message: "JWT Token has Expired" });
+            } else {
+                res.status(401).json({ error: true, message: "Invalid JWT token" });
+            }
+            return;
+        }
+    }
+    else {
+        res.status(401).json({ error: true, message: "Authorization header is malformed" });
+    }
 });
 
 // PUT user/{email}/profile
