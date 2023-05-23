@@ -27,7 +27,21 @@ router.get("/search", async (req, res, next) => {
         const perPage = 100;
         const startIndex = (page - 1) * perPage;
         const endIndex = startIndex + perPage;
+
+        // trim down the result to 100
         const slicedRows = rows.slice(startIndex, endIndex);
+
+        // change the ratings to ints and doubles for the stupid
+        // automated testing
+        slicedRows.forEach(element => {
+            const tempImdbRating = parseFloat(element.imdbRating);
+            const tempRottenTomatoesRating = parseInt(element.rottenTomatoesRating);
+            const tempMetacriticRating = parseInt(element.metacriticRating);
+
+            element.imdbRating = tempImdbRating;
+            element.rottenTomatoesRating = tempRottenTomatoesRating;
+            element.metacriticRating = tempMetacriticRating;
+        })
 
         // add the pagination data
         const pagination = {
