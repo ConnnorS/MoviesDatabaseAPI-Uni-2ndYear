@@ -209,7 +209,7 @@ router.post('/refresh', (req, res, next) => {
 
 // user/login
 router.post('/login', async (req, res, next) => {
-    const { email, password } = req.body;
+    const { email, password, longExpiry, bearerExpiresInSeconds = 600, refreshExpiresInSeconds = 86400 } = req.body;
 
     // check if the request has everything
     if (!email || !password) {
@@ -244,17 +244,15 @@ router.post('/login', async (req, res, next) => {
     }
 
     // if the passwords are correct, return the bearer token
-    const expires_in = 600;
-    const exp = Math.floor(Date.now() / 1000) +expires_in;
+    const exp = Math.floor(Date.now() / 1000) + bearerExpiresInSeconds;
     const token = jwt.sign({ email, exp }, process.env.JWT_SECRET);
 
-    const refreshExpiresIn = 86400;
-    const refreshExp = Math.floor(Date.now() / 1000) + refreshExpiresIn;
+    const refreshExp = Math.floor(Date.now() / 1000) + refreshExpiresInSeconds;
     const refreshToken = jwt.sign({ email, refreshExp }, process.env.JWT_SECRET);
 
     res.status(200).json({
-        bearerToken: { token, token_type: "Bearer", expires_in },
-        refreshToken: { token: refreshToken, token_type: "Refresh", expires_in: refreshExpiresIn }
+        bearerToken: { token, token_type: "Bearer", expires_in: bearerExpiresInSeconds },
+        refreshToken: { token: refreshToken, token_type: "Refresh", expires_in: refreshExpiresInSeconds }
     });
 });
 
