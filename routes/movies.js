@@ -7,6 +7,8 @@ router.get("/search", async (req, res, next) => {
         // get the search params
         let { title = "", year = "", page = 1 } = req.query;
 
+        
+
         // query the database
         const rows = await req.db
             .from("movies.basics")
@@ -50,8 +52,8 @@ router.get("/search", async (req, res, next) => {
         const pagination = {
             total: resultLength,
             lastPage: Math.ceil(resultLength / perPage),
-            prevPage: prevPage !== 0 ? prevPage : null,
-            nextPage: prevPage !== 0 ? nextPage : null,
+            prevPage: prevPage === 0 ? null : prevPage,
+            nextPage: slicedRows.length < 100 ? null : nextPage,
             perPage: perPage,
             currentPage: page,
             from: startIndex,
