@@ -8,7 +8,6 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 // route definitions
-var indexRouter = require('./routes/index');
 var peopleRouter = require('./routes/people');
 var moviesRouter = require('./routes/movies');
 var usersRouter = require('./routes/user');
@@ -18,6 +17,10 @@ var app = express();
 // knex setup
 const options = require('./knexfile.js');
 const knex = require('knex')(options);
+
+// swagger stuff
+const swaggerUI = require('swagger-ui-express');
+const swaggerDocument = require('./docs/swagger.json');
 
 app.use((req, res, next) => {
   req.db = knex;
@@ -46,7 +49,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // routes
-app.use('/', indexRouter);
+app.use('/', swaggerUI.serve, swaggerUI.setup(swaggerDocument));
 app.use('/people', peopleRouter);
 app.use('/movies', moviesRouter);
 app.use('/user', usersRouter);
