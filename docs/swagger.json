@@ -90,13 +90,44 @@
             "in": "path",
             "description": "A user's email from the movies database",
             "required": true,
-            "schema": {"type": "string"}
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "tags": ["query"],
+        "tags": [
+          "query"
+        ],
         "summary": "Returns a user's profile information",
         "description": "Users first name, last name, and email",
-        "operationId": "getUserInfo"
+        "operationId": "getUserInfo",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Error": {
+                  "type": "string",
+                  "enum": [
+                    "true",
+                    "false"
+                  ]
+                },
+                "Message": {
+                  "type": "string",
+                  "enum": [
+                    "Success",
+                    "Failure"
+                  ]
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/movies/search": {
