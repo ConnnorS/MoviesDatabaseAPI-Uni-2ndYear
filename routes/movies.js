@@ -5,8 +5,6 @@ var router = express.Router();
 router.get("/search", async (req, res, next) => {
     // get the search params
     let { title = "", year = "", page = "1" } = req.query;
-    console.log(page);
-    console.log(typeof page);
 
     try {
         // validate search params
@@ -74,7 +72,6 @@ router.get("/search", async (req, res, next) => {
             to: Math.min(endIndex, resultLength),
         };
 
-
         // return the result
         res.json({
             Error: false,
@@ -84,8 +81,7 @@ router.get("/search", async (req, res, next) => {
         });
     }
     // error handling
-    catch (error) {
-        console.log(err);
+    catch {
         res.status(500).json({ error: true, message: "Error with database" });
     }
 });
@@ -121,9 +117,9 @@ router.get("/data/:imdbID", async (req, res, next) => {
         result.genres = result.genres.split(',');
         // assign the movie ratings
         let ratings = [];
-        ratings.push({source: "Internet Movie Database", value: parseFloat(result.imdbRating)});
-        ratings.push({source: "Rotten Tomatoes", value: parseInt(result.rottentomatoesRating)});
-        ratings.push({source: "Metacritic", value: parseInt(result.metacriticRating)});
+        ratings.push({ source: "Internet Movie Database", value: parseFloat(result.imdbRating) });
+        ratings.push({ source: "Rotten Tomatoes", value: parseInt(result.rottentomatoesRating) });
+        ratings.push({ source: "Metacritic", value: parseInt(result.metacriticRating) });
         result.ratings = ratings;
 
         // get the actor data
