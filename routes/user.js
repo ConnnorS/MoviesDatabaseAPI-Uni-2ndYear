@@ -9,54 +9,52 @@ const jwt = require('jsonwebtoken');
 
 
 // functions to verify the date
-function isValidDateFormat(dateString) {
+function isValidDateFormat(date) {
+    // Check if the date matches the format "YYYY-MM-DD"
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(date)) {
+        return false;
+    }
+
+    // Create a new Date object using the provided date string
+    const parts = date.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Months are zero-based
+    const day = parseInt(parts[2], 10);
+    const parsedDate = new Date(year, month, day);
+
+    // Check if the parsed date values match the provided date
+    if (
+        parsedDate.getFullYear() !== year ||
+        parsedDate.getMonth() !== month ||
+        parsedDate.getDate() !== day
+    ) {
+        return false;
+    }
+
+    // Check if the parsed date is a valid date
+    return !isNaN(parsedDate.getTime());
+}
+
+
+
+function isValidDate(dateString) {
     // Split the date into its components
     const [year, month, day] = dateString.split('-');
-  
+
     // Convert the components into numbers
     const numericYear = parseInt(year, 10);
     const numericMonth = parseInt(month, 10);
     const numericDay = parseInt(day, 10);
-  
-    // Check if the date is valid
-    const date = new Date(numericYear, numericMonth - 1, numericDay);
-    if (
-      date.getFullYear() !== numericYear ||
-      date.getMonth() + 1 !== numericMonth ||
-      date.getDate() !== numericDay
-    ) {
-      return false; // Invalid date
+
+    // Check if the date is in the future
+    const currentDate = new Date();
+    const date = new Date(numericYear, numericMonth, numericDay);
+    if (date > currentDate) {
+        return false; // Date is in the future
     }
-  
-    // Check if February 29 is on a leap year
-    if (numericMonth === 2 && numericDay === 29) {
-      const isLeapYear = (numericYear % 4 === 0 && numericYear % 100 !== 0) || numericYear % 400 === 0;
-      if (!isLeapYear) {
-        return false; // February 29 on a non-leap year
-      }
-    }
-  
-    return true; // Valid date
-  }
-  
 
-function isValidDate(dateString) {
-    // Split the date into its components
-  const [year, month, day] = dateString.split('-');
-
-  // Convert the components into numbers
-  const numericYear = parseInt(year, 10);
-  const numericMonth = parseInt(month, 10);
-  const numericDay = parseInt(day, 10);
-
-  // Check if the date is in the future
-  const currentDate = new Date();
-  const date = new Date(numericYear, numericMonth - 1, numericDay);
-  if (date > currentDate) {
-    return false; // Date is in the future
-  }
-
-  return true; // Date is not in the future
+    return true; // Date is not in the future
 }
 
 // GET user/{email}/profile
@@ -78,7 +76,7 @@ router.get('/:email/profile', async (req, res, next) => {
     // if no authorisation, only provide basic info
     if (!("authorization" in req.headers)) {
         const info = { email: userData[0].email, firstName: userData[0].firstName, lastName: userData[0].lastName };
-        return res.status(200).json({ error: false, message: "Success", data: info });
+        return res.status(200).json(info);
     }
 
     // if the user has provided some authorisation
@@ -89,11 +87,11 @@ router.get('/:email/profile', async (req, res, next) => {
             const verified = jwt.verify(token, process.env.JWT_SECRET);
             // check if the token's email matches the claimed email
             if (verified.email === req.params.email) {
-                res.status(200).json({ error: false, message: "Success", data: userData[0] });
+                res.status(200).json(userData[0]);
             }
             else {
                 const info = { email: userData[0].email, firstName: userData[0].firstName, lastName: userData[0].lastName };
-                res.status(200).json({ error: false, message: "Success", data: info });
+                res.status(200).json(info);
             }
         }
         catch (e) {
@@ -155,11 +153,7 @@ router.put('/:email/profile', async (req, res, next) => {
                 .where("email", "=", req.params.email)
                 .update({ firstName: firstName, lastName: lastName, dob: dob, address: address });
 
-            res.status(200).json({
-                error: false,
-                message: "success",
-                data: { email: userData[0].email, firstName, lastName, dob, address }
-            });
+            res.status(200).json({ email: userData[0].email, firstName, lastName, dob, address });
         }
         // if the token's email doesn't match the claimed email
         else {
@@ -183,7 +177,7 @@ router.post('/refresh', (req, res, next) => {
     if (!userRefreshToken) {
         return res.status(400).json({
             error: true,
-            message: "Request body incomplete, refresh token required."
+            message: "Request body incomplete, refresh token required"
         });
     }
 
@@ -207,10 +201,9 @@ router.post('/refresh', (req, res, next) => {
         });
     }
     catch (e) {
-        e.name == "TokenExpiredError" ?
-            res.status(401).json({ error: true, message: "JWT token has expired." })
-            :
-            res.status(401).json({ error: true, message: "Invalid JWT token." });
+        console.log(e);
+        if (e.name == "TokenExpiredError") res.status(401).json({ error: true, message: "JWT token has expired" });
+        else res.status(401).json({ error: true, message: "Invalid JWT token" });
         return;
     }
 });
@@ -218,6 +211,7 @@ router.post('/refresh', (req, res, next) => {
 // user/login
 router.post('/login', async (req, res, next) => {
     const { email, password, longExpiry, bearerExpiresInSeconds = 600, refreshExpiresInSeconds = 86400 } = req.body;
+    console.log(refreshExpiresInSeconds);
 
     // check if the request has everything
     if (!email || !password) {

@@ -108,15 +108,23 @@ router.get("/data/:imdbID", async (req, res, next) => {
                 "country",
                 "boxoffice",
                 "poster",
-                "plot"
+                "plot",
+                "imdbRating",
+                "rottentomatoesRating",
+                "metacriticRating"
             )
             .where("tconst", "=", imdbID)
 
-        // assign the result to result
+        // assign the movieData to result
         result = movieData[0];
         // return the genres as an array
         result.genres = result.genres.split(',');
-
+        // assign the movie ratings
+        let ratings = [];
+        ratings.push({source: "Internet Movie Database", value: parseFloat(result.imdbRating)});
+        ratings.push({source: "Rotten Tomatoes", value: parseInt(result.rottentomatoesRating)});
+        ratings.push({source: "Metacritic", value: parseInt(result.metacriticRating)});
+        result.ratings = ratings;
 
         // get the actor data
         const actorData = await req.db
