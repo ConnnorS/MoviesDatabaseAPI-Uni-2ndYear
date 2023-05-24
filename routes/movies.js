@@ -134,7 +134,7 @@ router.get("/data/:imdbID", async (req, res, next) => {
         result.principals = actorData;
 
         // return the result
-        res.json({ Error: false, Message: "Success", data: result });
+        res.json(result);
     }
     // error handling
     catch (err) {

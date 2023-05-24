@@ -8,52 +8,56 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 
-// function to verify the date
-function isValidDate(dateString) {
-    // Regular expression pattern for YYYY-MM-DD format
-    const regex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-
-    if (!regex.test(dateString)) {
-        return false; // Not in the correct format
-    }
-
+// functions to verify the date
+function isValidDateFormat(dateString) {
     // Split the date into its components
     const [year, month, day] = dateString.split('-');
-
+  
     // Convert the components into numbers
     const numericYear = parseInt(year, 10);
     const numericMonth = parseInt(month, 10);
     const numericDay = parseInt(day, 10);
-
+  
     // Check if the date is valid
     const date = new Date(numericYear, numericMonth - 1, numericDay);
     if (
-        date.getFullYear() !== numericYear ||
-        date.getMonth() + 1 !== numericMonth ||
-        date.getDate() !== numericDay
+      date.getFullYear() !== numericYear ||
+      date.getMonth() + 1 !== numericMonth ||
+      date.getDate() !== numericDay
     ) {
-        return false; // Invalid date
+      return false; // Invalid date
     }
-
+  
     // Check if February 29 is on a leap year
     if (numericMonth === 2 && numericDay === 29) {
-        const isLeapYear = (numericYear % 4 === 0 && numericYear % 100 !== 0) || numericYear % 400 === 0;
-        if (!isLeapYear) {
-            return false; // February 29 on a non-leap year
-        }
+      const isLeapYear = (numericYear % 4 === 0 && numericYear % 100 !== 0) || numericYear % 400 === 0;
+      if (!isLeapYear) {
+        return false; // February 29 on a non-leap year
+      }
     }
-    
-    // Check if the date is in the future
-    const currentDate = new Date();
-    if (date > currentDate) {
-        return false; // Date is in the future
-    }
-
+  
     return true; // Valid date
+  }
+  
+
+function isValidDate(dateString) {
+    // Split the date into its components
+  const [year, month, day] = dateString.split('-');
+
+  // Convert the components into numbers
+  const numericYear = parseInt(year, 10);
+  const numericMonth = parseInt(month, 10);
+  const numericDay = parseInt(day, 10);
+
+  // Check if the date is in the future
+  const currentDate = new Date();
+  const date = new Date(numericYear, numericMonth - 1, numericDay);
+  if (date > currentDate) {
+    return false; // Date is in the future
+  }
+
+  return true; // Date is not in the future
 }
-
-
-
 
 // GET user/{email}/profile
 router.get('/:email/profile', async (req, res, next) => {
@@ -88,7 +92,8 @@ router.get('/:email/profile', async (req, res, next) => {
                 res.status(200).json({ error: false, message: "Success", data: userData[0] });
             }
             else {
-                res.status(403).json({ error: true, message: "Forbidden" })
+                const info = { email: userData[0].email, firstName: userData[0].firstName, lastName: userData[0].lastName };
+                res.status(200).json({ error: false, message: "Success", data: info });
             }
         }
         catch (e) {
@@ -111,13 +116,16 @@ router.put('/:email/profile', async (req, res, next) => {
 
     // verify the fields
     if (!firstName || !lastName || !dob || !address) {
-        return res.status(400).json({ error: true, message: "Request body incomplete: firstName, lastName, dob, and address are required" });
+        return res.status(400).json({ error: true, message: "Request body incomplete: firstName, lastName, dob and address are required." });
     }
     if (typeof firstName !== "string" || typeof lastName !== "string" || typeof dob !== "string" || typeof address !== "string") {
         return res.status(400).json({ error: true, message: "Request body invalid: firstName, lastName and address must be strings only." });
     }
-    if (!isValidDate(dob)) {
+    if (!isValidDateFormat(dob)) {
         return res.status(400).json({ error: true, message: "Invalid input: dob must be a real date in format YYYY-MM-DD." });
+    }
+    if (!isValidDate(dob)) {
+        return res.status(400).json({ error: true, message: "Invalid input: dob must be a date in the past." });
     }
 
     // check if the user exists
@@ -186,7 +194,7 @@ router.post('/refresh', (req, res, next) => {
         // if the passwords are correct, return the bearer token
         const email = verified.email;
         const expires_in = 600;
-        const exp = Math.floor(Date.now() / 1000) +expires_in;
+        const exp = Math.floor(Date.now() / 1000) + expires_in;
         const token = jwt.sign({ email, exp }, process.env.JWT_SECRET);
 
         const refreshExpiresIn = 86400;
