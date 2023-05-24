@@ -118,8 +118,11 @@ router.get("/data/:imdbID", async (req, res, next) => {
         // assign the movie ratings
         let ratings = [];
         ratings.push({ source: "Internet Movie Database", value: parseFloat(result.imdbRating) });
+        delete result.imdbRating;
         ratings.push({ source: "Rotten Tomatoes", value: parseInt(result.rottentomatoesRating) });
+        delete result.rottentomatoesRating;
         ratings.push({ source: "Metacritic", value: parseInt(result.metacriticRating) });
+        delete result.metacriticRating;
         result.ratings = ratings;
 
         // get the actor data

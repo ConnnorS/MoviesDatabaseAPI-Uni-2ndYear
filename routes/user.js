@@ -126,6 +126,7 @@ router.post('/refresh', (req, res, next) => {
     // verify the refresh token
     try {
         const verified = jwt.verify(userRefreshToken, process.env.JWT_SECRET, { ignoreExpiration: false });
+
         // if verified, give a new one
         const response = giveToken(verified.email, 600, 86400);
         res.status(200).json(response);

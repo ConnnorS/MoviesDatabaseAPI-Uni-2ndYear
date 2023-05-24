@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
+// authorisation
 const authorisation = require("../middleware/authorisation");
 
 // people/{id}
@@ -44,7 +45,6 @@ router.get("/:id", authorisation, async (req, res, next) => {
         }
 
         result.roles = mainActorRoles;
-
 
         res.json(result);
     }
