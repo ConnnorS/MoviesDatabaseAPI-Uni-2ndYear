@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 module.exports = (req, res, next) => {
     if (!("authorization" in req.headers) || !req.headers.authorization.match(/^Bearer /)) {
-        return res.status(401).json({ error: true, message: "Authorisation header ('Bearer Token') not found." });
+        return res.status(401).json({ error: true, message: "Authorization header ('Bearer token') not found" });
     }
 
     const token = req.headers.authorization.replace(/^Bearer /, "");
@@ -11,7 +11,7 @@ module.exports = (req, res, next) => {
         if (e.name === "TokenExpiredError") {
             res.status(401).json({ error: true, message: "JWT Token has Expired" });
         } else {
-            res.status(401).json({ error: true, message: "Invalid JWT Token" });
+            res.status(401).json({ error: true, message: "Invalid JWT token" });
         }
         return;
     }

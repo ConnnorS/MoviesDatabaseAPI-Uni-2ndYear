@@ -185,8 +185,8 @@ router.post('/refresh', (req, res, next) => {
         // if verified, give a new one
         // if the passwords are correct, return the bearer token
         const email = verified.email;
-        const expiresIn = 600;
-        const exp = Math.floor(Date.now() / 1000) + expiresIn;
+        const expires_in = 600;
+        const exp = Math.floor(Date.now() / 1000) +expires_in;
         const token = jwt.sign({ email, exp }, process.env.JWT_SECRET);
 
         const refreshExpiresIn = 86400;
@@ -194,8 +194,8 @@ router.post('/refresh', (req, res, next) => {
         const refreshToken = jwt.sign({ email, refreshExp }, process.env.JWT_SECRET);
 
         res.status(200).json({
-            bearerToken: { token, token_type: "Bearer", expiresIn },
-            refreshToken: { token: refreshToken, token_type: "Refresh", expiresIn: refreshExpiresIn }
+            bearerToken: { token, token_type: "Bearer", expires_in },
+            refreshToken: { token: refreshToken, token_type: "Refresh", expires_in: refreshExpiresIn }
         });
     }
     catch (e) {
@@ -244,8 +244,8 @@ router.post('/login', async (req, res, next) => {
     }
 
     // if the passwords are correct, return the bearer token
-    const expiresIn = 600;
-    const exp = Math.floor(Date.now() / 1000) + expiresIn;
+    const expires_in = 600;
+    const exp = Math.floor(Date.now() / 1000) +expires_in;
     const token = jwt.sign({ email, exp }, process.env.JWT_SECRET);
 
     const refreshExpiresIn = 86400;
@@ -253,8 +253,8 @@ router.post('/login', async (req, res, next) => {
     const refreshToken = jwt.sign({ email, refreshExp }, process.env.JWT_SECRET);
 
     res.status(200).json({
-        bearerToken: { token, token_type: "Bearer", expiresIn },
-        refreshToken: { token: refreshToken, token_type: "Refresh", expiresIn: refreshExpiresIn }
+        bearerToken: { token, token_type: "Bearer", expires_in },
+        refreshToken: { token: refreshToken, token_type: "Refresh", expires_in: refreshExpiresIn }
     });
 });
 

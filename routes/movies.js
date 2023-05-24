@@ -139,7 +139,7 @@ router.get("/data/:imdbID", async (req, res, next) => {
     // error handling
     catch (err) {
         console.log(err);
-        res.status(500).json({ error: true, message: "Error with database" });
+        res.status(404).json({ error: true, message: "Error with database" });
     }
 });
 
