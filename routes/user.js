@@ -7,55 +7,12 @@ const bcrypt = require('bcrypt');
 // JSON Web Tokens
 const jwt = require('jsonwebtoken');
 
+// authorisation
+const authorisation = require("../middleware/authorisation");
 
-// functions to verify the date
-function isValidDateFormat(date) {
-    // Check if the date matches the format "YYYY-MM-DD"
-    const regex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!regex.test(date)) {
-        return false;
-    }
-
-    // Create a new Date object using the provided date string
-    const parts = date.split('-');
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // Months are zero-based
-    const day = parseInt(parts[2], 10);
-    const parsedDate = new Date(year, month, day);
-
-    // Check if the parsed date values match the provided date
-    if (
-        parsedDate.getFullYear() !== year ||
-        parsedDate.getMonth() !== month ||
-        parsedDate.getDate() !== day
-    ) {
-        return false;
-    }
-
-    // Check if the parsed date is a valid date
-    return !isNaN(parsedDate.getTime());
-}
-
-
-
-function isValidDate(dateString) {
-    // Split the date into its components
-    const [year, month, day] = dateString.split('-');
-
-    // Convert the components into numbers
-    const numericYear = parseInt(year, 10);
-    const numericMonth = parseInt(month, 10);
-    const numericDay = parseInt(day, 10);
-
-    // Check if the date is in the future
-    const currentDate = new Date();
-    const date = new Date(numericYear, numericMonth, numericDay);
-    if (date > currentDate) {
-        return false; // Date is in the future
-    }
-
-    return true; // Date is not in the future
-}
+const isValidDateFormat = require("../functions/isValidDateFormat");
+const dateNotInFuture = require("../functions/dateNotInFuture");
+const giveToken = require("../functions/giveToken");
 
 // GET user/{email}/profile
 router.get('/:email/profile', async (req, res, next) => {
@@ -109,7 +66,7 @@ router.get('/:email/profile', async (req, res, next) => {
     }
 });
 
-router.put('/:email/profile', async (req, res, next) => {
+router.put('/:email/profile', authorisation, async (req, res, next) => {
     const { firstName, lastName, dob, address } = req.body;
 
     // verify the fields
@@ -122,7 +79,7 @@ router.put('/:email/profile', async (req, res, next) => {
     if (!isValidDateFormat(dob)) {
         return res.status(400).json({ error: true, message: "Invalid input: dob must be a real date in format YYYY-MM-DD." });
     }
-    if (!isValidDate(dob)) {
+    if (!dateNotInFuture(dob)) {
         return res.status(400).json({ error: true, message: "Invalid input: dob must be a date in the past." });
     }
 
@@ -135,36 +92,21 @@ router.put('/:email/profile', async (req, res, next) => {
         return res.status(404).json({ error: true, message: "User not found" });
     }
 
-    // check for authorisation header
-    if (!req.headers.authorization) {
-        return res.status(401).json({ error: true, message: "Authorization header ('Bearer token') not found" });
-    }
-    else if (!req.headers.authorization.startsWith('Bearer ')) {
-        return res.status(401).json({ error: true, message: "Authorization header is malformed" });
-    }
-
     // verify the authorisation
     const token = req.headers.authorization.replace('Bearer ', '');
-    try {
-        const verified = jwt.verify(token, process.env.JWT_SECRET);
-        // check if the token's email and claimed email match
-        if (verified.email === req.params.email) {
-            const data = await req.db("movies.users")
-                .where("email", "=", req.params.email)
-                .update({ firstName: firstName, lastName: lastName, dob: dob, address: address });
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
 
-            res.status(200).json({ email: userData[0].email, firstName, lastName, dob, address });
-        }
-        // if the token's email doesn't match the claimed email
-        else {
-            res.status(403).json({ error: true, message: "Forbidden" });
-        }
-    } catch (error) {
-        if (error.name === "TokenExpiredError") {
-            res.status(401).json({ error: true, message: "JWT Token has expired" });
-        } else {
-            res.status(401).json({ error: true, message: "Invalid JWT token" });
-        }
+    // check if the token's email and claimed email match
+    if (verified.email === req.params.email) {
+        const data = await req.db("movies.users")
+            .where("email", "=", req.params.email)
+            .update({ firstName: firstName, lastName: lastName, dob: dob, address: address });
+
+        res.status(200).json({ email: userData[0].email, firstName, lastName, dob, address });
+    }
+    // if the token's email doesn't match the claimed email
+    else {
+        res.status(403).json({ error: true, message: "Forbidden" });
     }
 });
 
@@ -183,26 +125,14 @@ router.post('/refresh', (req, res, next) => {
 
     // verify the refresh token
     try {
-        const verified = jwt.verify(userRefreshToken, process.env.JWT_SECRET)
+        const verified = jwt.verify(userRefreshToken, process.env.JWT_SECRET, { ignoreExpiration: false });
         // if verified, give a new one
-        // if the passwords are correct, return the bearer token
-        const email = verified.email;
-        const expires_in = 600;
-        const exp = Math.floor(Date.now() / 1000) + expires_in;
-        const token = jwt.sign({ email, exp }, process.env.JWT_SECRET);
-
-        const refreshExpiresIn = 86400;
-        const refreshExp = Math.floor(Date.now() / 1000) + refreshExpiresIn;
-        const refreshToken = jwt.sign({ email, refreshExp }, process.env.JWT_SECRET);
-
-        res.status(200).json({
-            bearerToken: { token, token_type: "Bearer", expires_in },
-            refreshToken: { token: refreshToken, token_type: "Refresh", expires_in: refreshExpiresIn }
-        });
+        const response = giveToken(verified.email, 600, 86400);
+        res.status(200).json(response);
     }
     catch (e) {
         console.log(e);
-        if (e.name == "TokenExpiredError") res.status(401).json({ error: true, message: "JWT token has expired" });
+        if (e instanceof jwt.TokenExpiredError) res.status(401).json({ error: true, message: "JWT token has expired" });
         else res.status(401).json({ error: true, message: "Invalid JWT token" });
         return;
     }
@@ -210,8 +140,7 @@ router.post('/refresh', (req, res, next) => {
 
 // user/login
 router.post('/login', async (req, res, next) => {
-    const { email, password, longExpiry, bearerExpiresInSeconds = 600, refreshExpiresInSeconds = 86400 } = req.body;
-    console.log(refreshExpiresInSeconds);
+    const { email, password, longExpiry = false, bearerExpiresInSeconds = 600, refreshExpiresInSeconds = 86400 } = req.body;
 
     // check if the request has everything
     if (!email || !password) {
@@ -237,7 +166,6 @@ router.post('/login', async (req, res, next) => {
     // compare the passwords
     const user = users[0];
     const match = await bcrypt.compare(password, user.hash);
-
     if (!match) {
         return res.status(401).json({
             error: true,
@@ -246,16 +174,8 @@ router.post('/login', async (req, res, next) => {
     }
 
     // if the passwords are correct, return the bearer token
-    const exp = Math.floor(Date.now() / 1000) + bearerExpiresInSeconds;
-    const token = jwt.sign({ email, exp }, process.env.JWT_SECRET);
-
-    const refreshExp = Math.floor(Date.now() / 1000) + refreshExpiresInSeconds;
-    const refreshToken = jwt.sign({ email, refreshExp }, process.env.JWT_SECRET);
-
-    res.status(200).json({
-        bearerToken: { token, token_type: "Bearer", expires_in: bearerExpiresInSeconds },
-        refreshToken: { token: refreshToken, token_type: "Refresh", expires_in: refreshExpiresInSeconds }
-    });
+    const response = giveToken(email, bearerExpiresInSeconds, refreshExpiresInSeconds)
+    res.status(200).json(response);
 });
 
 // user/register
