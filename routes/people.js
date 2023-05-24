@@ -9,20 +9,25 @@ router.get("/:id", authorisation, async (req, res, next) => {
     const id = req.params.id;
 
     let result = {};
-    // fetch the actor information
     try {
+        // check for search params
+        if (Object.keys(req.query).length !== 0) {
+            return res.status(400).json({ error: true, message: "Query parameters are not permitted." });
+        }
+
+        // fetch the actor information
         const mainActorInfo = await req.db
             .from("movies.names")
             .select("primaryName AS name", "birthYear", "deathYear")
             .where("nconst", "=", id);
-        
+
         result = mainActorInfo[0];
 
         const mainActorRoles = await req.db
             .from("movies.principals")
             .select("tconst AS movieId", "category", "characters")
             .where("nconst", "=", id);
-        
+
         // convert the 'characters' key to an array
         mainActorRoles.forEach(element => {
             element.characters = element.characters.replace(/[\[\]"]/g, '').split(',');
@@ -35,7 +40,7 @@ router.get("/:id", authorisation, async (req, res, next) => {
                 .select("primaryTitle", "imdbRating")
                 .where("tconst", "=", mainActorRoles[i].movieId);
             mainActorRoles[i].movieName = movieData[0].primaryTitle;
-            mainActorRoles[i].imdbRating = movieData[0].imdbRating;
+            mainActorRoles[i].imdbRating = parseFloat(movieData[0].imdbRating);
         }
 
         result.roles = mainActorRoles;
@@ -46,7 +51,7 @@ router.get("/:id", authorisation, async (req, res, next) => {
     // error handling
     catch (err) {
         console.log(err);
-        res.status(500).json({ error: true, message: "Error with database" });
+        res.status(404).json({ error: true, message: "Error with database" });
     };
 });
 
