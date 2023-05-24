@@ -44,16 +44,20 @@ router.get("/search", async (req, res, next) => {
         })
 
         // add the pagination data
+        page = parseInt(page);
+        const prevPage = page - 1;
+        const nextPage = page + 1;
         const pagination = {
             total: resultLength,
             lastPage: Math.ceil(resultLength / perPage),
-            prevPage: parseInt(page) - 1,
-            nextPage: parseInt(page) + 1,
+            prevPage: prevPage !== 0 ? prevPage : null,
+            nextPage: prevPage !== 0 ? nextPage : null,
             perPage: perPage,
-            currentPage: parseInt(page),
+            currentPage: page,
             from: startIndex,
             to: Math.min(endIndex, resultLength),
         };
+
 
         // return the result
         res.json({
@@ -97,13 +101,13 @@ router.get("/data/:imdbID", async (req, res, next) => {
         // return the genres as an array
         result.genres = result.genres.split(',');
 
-        
+
         // get the actor data
         const actorData = await req.db
             .from("movies.principals")
             .select("nconst AS id", "category", "name", "characters")
             .where("tconst", "=", imdbID);
-        
+
         // fix up their characters array
         actorData.forEach(element => {
             const temp = element.characters.replace(/[\[\]"]/g, '').split(',');
