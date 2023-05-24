@@ -3,11 +3,26 @@ var router = express.Router();
 
 // movies/search
 router.get("/search", async (req, res, next) => {
-    try {
-        // get the search params
-        let { title = "", year = "", page = 1 } = req.query;
+    // get the search params
+    let { title = "", year = "", page = "1" } = req.query;
+    console.log(page);
+    console.log(typeof page);
 
-        
+    try {
+        // validate search params
+        // year
+        if (year && !/^\d+$/.test(year)) {
+            res.status(400).json({ error: true, message: "Invalid year format. Format must be yyyy." });
+            return;
+        };
+        if (year) year = parseInt(year);
+
+        // page
+        if (!/^\d+$/.test(page)) {
+            res.status(400).json({ error: true, message: "Invalid page format. page must be a number." });
+            return;
+        }
+        page = parseInt(page);
 
         // query the database
         const rows = await req.db
@@ -43,10 +58,9 @@ router.get("/search", async (req, res, next) => {
             element.imdbRating = tempImdbRating;
             element.rottenTomatoesRating = tempRottenTomatoesRating;
             element.metacriticRating = tempMetacriticRating;
-        })
+        });
 
         // add the pagination data
-        page = parseInt(page);
         const prevPage = page - 1;
         const nextPage = page + 1;
         const pagination = {
