@@ -82,11 +82,16 @@
     }
   },
   "paths": {
-    "/people/{email}/profile": {
+    "/user/{email}/profile": {
       "get": {
+        "tags": [
+          "User"
+        ],
+        "description": "Users first name, last name, and email",
+        "operationId": "getUserInfo",
         "parameters": [
           {
-            "email": "email",
+            "name": "email",
             "in": "path",
             "description": "A user's email from the movies database",
             "required": true,
@@ -94,15 +99,6 @@
               "type": "string"
             }
           }
-        ],
-        "tags": [
-          "query"
-        ],
-        "summary": "Returns a user's profile information",
-        "description": "Users first name, last name, and email",
-        "operationId": "getUserInfo",
-        "produces": [
-          "application/json"
         ],
         "responses": {
           "200": {
@@ -123,6 +119,23 @@
                     "Success",
                     "Failure"
                   ]
+                },
+                "Data": {
+                  "type": "object",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "email": {
+                        "type": "string"
+                      },
+                      "firstName": {
+                        "type": "string"
+                      },
+                      "lastName": {
+                        "type": "string"
+                      }
+                    }
+                  }
                 }
               }
             }
