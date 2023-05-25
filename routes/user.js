@@ -110,7 +110,35 @@ router.put('/:email/profile', authorisation, async (req, res, next) => {
     }
 });
 
+router.post('/logout', async (req, res, next) => {
+    // check for a refresh token
+    if (!req.body.refreshToken) {
+        return res.status(400).json({ error: true, message: "Request body incomplete, refresh token required" });
+    }
 
+    const token = req.body.refreshToken;
+
+    // verify the token
+    try { jwt.verify(token, process.env.JWT_SECRET) }
+    catch (e) {
+        if (e.name === "TokenExpiredError") {
+            res.status(401).json({ error: true, message: "JWT token has expired" });
+        } else {
+            res.status(401).json({ error: true, message: "Invalid JWT token" });
+        }
+        return;
+    }
+
+    try {
+        await req.db
+            .from("movies.invalidTokens")
+            .insert({ tokens: token });
+        res.status(200).json({ error: false, message: "Token successfully invalidated" });
+    }
+    catch {
+        res.status(500).json({ error: true, message: "Error with database" });
+    }
+});
 // user/refresh
 router.post('/refresh', (req, res, next) => {
     const userRefreshToken = req.body.refreshToken;

@@ -8,14 +8,26 @@ router.get("/search", async (req, res, next) => {
 
     try {
         // validate search params
-        // year
+        const allowedParams = ['title', 'year', 'page'];
+        const queryParams = Object.keys(req.query);
+        let = hasInvalidParam = false;
+        queryParams.forEach(key => {
+            if (!allowedParams.includes(key)) {
+                hasInvalidParam = true;
+            }
+        });
+        if (hasInvalidParam) {
+            res.status(400).json({ error: true, message: "Invalid query parameter provided." });
+            return;
+        }
+        // validate year
         if (year && !/^\d+$/.test(year)) {
             res.status(400).json({ error: true, message: "Invalid year format. Format must be yyyy." });
             return;
         };
         if (year) year = parseInt(year);
 
-        // page
+        // validate page
         if (!/^\d+$/.test(page)) {
             res.status(400).json({ error: true, message: "Invalid page format. page must be a number." });
             return;
@@ -58,9 +70,12 @@ router.get("/search", async (req, res, next) => {
             element.metacriticRating = tempMetacriticRating;
         });
 
-        // add the pagination data
+        // prepare the pagination data
         const prevPage = page - 1;
         const nextPage = page + 1;
+        const pageLimit = Math.ceil(resultLength / 100) * 100;
+        const to = resultLength < perPage ? resultLength : (endIndex > pageLimit ? pageLimit : endIndex);
+        // set the pagination data
         const pagination = {
             total: resultLength,
             lastPage: Math.ceil(resultLength / perPage),
@@ -69,7 +84,7 @@ router.get("/search", async (req, res, next) => {
             perPage: perPage,
             currentPage: page,
             from: startIndex,
-            to: Math.min(endIndex, resultLength),
+            to: to
         };
 
         // return the result
@@ -93,6 +108,11 @@ router.get("/data/:imdbID", async (req, res, next) => {
     let result = {};
 
     try {
+        // validate search params
+        // check for search params
+        if (Object.keys(req.query).length !== 0) {
+            return res.status(400).json({ error: true, message: "Query parameters are not permitted." });
+        }
         // get the movie data
         const movieData = await req.db
             .from("movies.basics")

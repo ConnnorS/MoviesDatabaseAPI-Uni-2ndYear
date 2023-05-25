@@ -17,6 +17,7 @@ var app = express();
 // knex setup
 const options = require('./knexfile.js');
 const knex = require('knex')(options);
+const cors = require('cors');
 
 // swagger stuff
 const swaggerUI = require('swagger-ui-express');
@@ -47,7 +48,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-
+app.use(cors());
 // routes
 app.get('/', (req, res) => {
   // redirect to docs as to not take over all the routes
@@ -58,6 +59,7 @@ app.use('/docs', swaggerUI.serve, swaggerUI.setup(swaggerDocument));
 app.use('/people', peopleRouter);
 app.use('/movies', moviesRouter);
 app.use('/user', usersRouter);
+
 
 
 // catch 404 and forward to error handler
