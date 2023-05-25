@@ -84,8 +84,269 @@
   "paths": {
     "/user/{email}/profile": {
       "put": {
-        "tags": ["User"],
-        "description": ""
+        "tags": [
+          "User"
+        ],
+        "description": "Add a user's first name, last name, date of birth, and address into the database",
+        "operationId": "updateUserData",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "description": "A user's email from the movies database",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The user's first name, last name, date of birth, and address",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "example": "Mike"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Smith"
+                  },
+                  "dob": {
+                    "type": "string",
+                    "example": "2000-05-04"
+                  },
+                  "address": {
+                    "type": "string",
+                    "example": "1 Infinite Loop Cupertino, CA  95014 United States"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User successfully updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string",
+                      "example": "mike@gmail.com"
+                    },
+                    "firstName": {
+                      "type": "string",
+                      "example": "Mike"
+                    },
+                    "lastName": {
+                      "type": "string",
+                      "example": "Smith"
+                    },
+                    "dob": {
+                      "type": "string",
+                      "example": "2000-05-04"
+                    },
+                    "address": {
+                      "type": "string",
+                      "example": "1 Infinite Loop Cupertino, CA  95014 United States"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Provided JWT valid but for the wrong user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Forbidden"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401 (No Auth Header)": {
+            "description": "Unsuccessful update of user information due to non-existent 'Authorization' header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Authorization header ('Bearer token') not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401 (Expired Token)": {
+            "description": "Unsuccessful update of user information due to expired JWT token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "JWT token has expired"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401 (Invalid token)": {
+            "description": "Unsuccessful update of user information due to invalid JWT token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid JWT token"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401 (Malformed Authorization Header)": {
+            "description": "Unsuccessful update of user information due to malformed authorization header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Authorization header is malformed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unsuccessful update of user information due to non-existent user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400 (Incomplete Request)": {
+            "description": "Unsuccessful update of user information due to an incomplete JSON object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Request body incomplete: firstName, lastName, dob and address are required"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400 (Non-strings provided)": {
+            "description": "Unsuccessful update of user information due to some or all information not being strings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Request body invalid: firstName, lastName, dob and address must be strings only"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400 (Invalid DOB)": {
+            "description": "Unsuccessful update of user information due to invalid DOB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid input: dob must be a real date in format YYYY-MM-DD"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       "get": {
         "tags": [
