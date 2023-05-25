@@ -83,6 +83,10 @@
   },
   "paths": {
     "/user/{email}/profile": {
+      "put": {
+        "tags": ["User"],
+        "description": ""
+      },
       "get": {
         "tags": [
           "User"
@@ -100,40 +104,174 @@
             }
           }
         ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "Error": {
-                  "type": "string",
-                  "enum": [
-                    "true",
-                    "false"
-                  ]
-                },
-                "Message": {
-                  "type": "string",
-                  "enum": [
-                    "Success",
-                    "Failure"
-                  ]
-                },
-                "Data": {
+          "200 (No Auth)": {
+            "description": "Successful retrieval of user information without authentication. Returns the user's email, first name, and last name.",
+            "content": {
+              "application/json": {
+                "schema": {
                   "type": "object",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "email": {
-                        "type": "string"
-                      },
-                      "firstName": {
-                        "type": "string"
-                      },
-                      "lastName": {
-                        "type": "string"
-                      }
+                  "properties": {
+                    "email": {
+                      "type": "string",
+                      "example": "mike@gmail.com"
+                    },
+                    "firstName": {
+                      "type": "string",
+                      "example": "Mike"
+                    },
+                    "lastName": {
+                      "type": "string",
+                      "example": "Smith"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200 (With Auth)": {
+            "description": "Successful retrieval of user information with authentication. Returns the user's email, first name, last name, date of birth, and address.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string",
+                      "example": "mike@gmail.com"
+                    },
+                    "firstName": {
+                      "type": "string",
+                      "example": "Mike"
+                    },
+                    "lastName": {
+                      "type": "string",
+                      "example": "Smith"
+                    },
+                    "dob": {
+                      "type": "string",
+                      "example": "2020-05-04"
+                    },
+                    "address": {
+                      "type": "string",
+                      "example": "1 Infinite Loop Cupertino, CA  95014 United States"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401 (Expired Token)": {
+            "description": "Unsuccessful retrival of user information due to an expired bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "JWT token has expired"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401 (Invalid token)": {
+            "description": "Unsuccessful retrival of user information due to an invalid bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid JWT token"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401 (Malformed Authorization Header)": {
+            "description": "Unsuccessful retrival of user information if there was an 'Authorization' header but it did not contain 'Bearer ' + the JWT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Authorization header is malformed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unsuccessful retrival of user information due to a non-existent email being provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200 (New User)": {
+            "description": "Successful retrieval of a new user's information with authentication. Returns the user's email with all other fields being null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string",
+                      "example": "mike@gmail.com"
+                    },
+                    "firstName": {
+                      "type": "string",
+                      "example": null
+                    },
+                    "lastName": {
+                      "type": "string",
+                      "example": null
+                    },
+                    "dob": {
+                      "type": "string",
+                      "example": null
+                    },
+                    "address": {
+                      "type": "string",
+                      "example": null
                     }
                   }
                 }
