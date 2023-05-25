@@ -140,7 +140,7 @@ router.post('/logout', async (req, res, next) => {
     }
 });
 // user/refresh
-router.post('/refresh', (req, res, next) => {
+router.post('/refresh', async (req, res, next) => {
     const userRefreshToken = req.body.refreshToken;
 
     // check if the request has everything
@@ -150,6 +150,20 @@ router.post('/refresh', (req, res, next) => {
             message: "Request body incomplete, refresh token required"
         });
     }
+
+    let tokens = [];
+    // get all the invalidated tokens
+    try {
+        const invalidTokens = await req.db.from("movies.invalidTokens").select("*");
+        invalidTokens.forEach(token => {
+            tokens.push(token.tokens);
+        });
+    }
+    catch {
+        res.status(500).json({ error: true, message: "Internal server error" });
+    }
+
+    if (tokens.includes(userRefreshToken)) return res.status(401).json({error: true, message: "JWT token is invalidated"});
 
     // verify the refresh token
     try {
