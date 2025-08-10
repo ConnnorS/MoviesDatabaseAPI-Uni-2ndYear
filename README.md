@@ -1,6 +1,6 @@
 # Movie Database REST API (Server-Side)
 
-This project is a **server-side implementation** of a movie database REST API, developed as part of my second-year CAB230 coursework. It builds on a client-side React app I created in a previous assignment, by creating and deploying the **backend server** that powers the API.
+This project is a **server-side implementation** of a movie database REST API, developed as part of my second-year CAB230 coursework. It builds on a [client-side React app](https://github.com/ConnnorS/MoviesDatabaseFrontend-Uni-2ndYear) I created in a previous assignment, by creating and deploying the **backend server** that powers the API.
 
 The API provides information about movies and the people involved in their creation, using a provided dataset, and includes **user authentication, JWT-based security, and profile management**.
 
